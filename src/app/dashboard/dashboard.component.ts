@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { LucideAngularModule } from 'lucide-angular';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
@@ -314,7 +315,7 @@ export class DashboardComponent implements OnInit {
   }
 
   loadStats() {
-    this.http.get<any>('http://localhost:8080/api/tramites/estadisticas').subscribe({
+    this.http.get<any>(`${environment.coreUrl}/tramites/estadisticas`).subscribe({
       next: (data) => {
         // Envolvemos TODO en un setTimeout de 0ms
         setTimeout(() => {

@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Client, Message } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 export interface Notification {
   id: string;
@@ -23,7 +24,7 @@ export class NotificationService {
 
   constructor(private authService: AuthService) {
     this.client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws-workflow'),
+      webSocketFactory: () => new SockJS(environment.wsWorkflowUrl),
       debug: (str) => {},
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,

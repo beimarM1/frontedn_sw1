@@ -2,6 +2,7 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { Subject, Observable, throttleTime } from 'rxjs';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { environment } from '../../environments/environment';
 
 /** Mensaje de movimiento de nodo (solo coordenadas, nunca BD) */
 export interface NodeMovePayload {
@@ -42,7 +43,7 @@ export class WorkflowSocketService implements OnDestroy {
     if (this.stompClient?.connected) return;
 
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws-workflow'),
+      webSocketFactory: () => new SockJS(environment.wsWorkflowUrl),
       // En producción, eliminar o reducir el debug:
       debug: () => {},
       reconnectDelay: 5000,
@@ -51,7 +52,7 @@ export class WorkflowSocketService implements OnDestroy {
     });
 
     this.stompClient.onConnect = () => {
-      console.log('[Socket] Conectado al workflow', workflowId);
+      console.log('[Socket] Conectado al workflow - workflow-socket.service.ts:55', workflowId);
 
       // Canal de actualizaciones del diagrama
       this.stompClient!.subscribe(`/topic/workflow/${workflowId}`, (msg) => {
@@ -65,7 +66,7 @@ export class WorkflowSocketService implements OnDestroy {
     };
 
     this.stompClient.onStompError = (frame) => {
-      console.error('[Socket] STOMP Error:', frame.headers['message']);
+      console.error('[Socket] STOMP Error: - workflow-socket.service.ts:69', frame.headers['message']);
     };
 
     this.stompClient.activate();

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 interface ChatMessage {
   text: string;
@@ -154,7 +155,7 @@ export class ChatbotComponent implements AfterViewChecked {
     this.isTyping.set(true);
 
     // Call AI backend
-    this.http.post<any>('http://localhost:8000/ai/chat', { message: text }).subscribe({
+    this.http.post<any>(`${environment.aiUrl}/chat`, { message: text }).subscribe({
       next: (res) => {
         const reply = res.reply || 'No entendí eso.';
         this.addBotMessage(reply);

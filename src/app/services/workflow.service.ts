@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 // ─── Esquema embebido del Formulario (REQ-07) ────────────────────────────────
 export interface FormField {
@@ -61,8 +62,8 @@ export interface WorkflowDefinition {
 // ─── Servicio HTTP ────────────────────────────────────────────────────────────
 @Injectable({ providedIn: 'root' })
 export class WorkflowService {
-  private readonly coreUrl = 'http://localhost:8080/api';
-  private readonly aiUrl   = 'http://localhost:8000/ai';
+  private readonly coreUrl = environment.coreUrl;
+  private readonly aiUrl   = environment.aiUrl;
 
   constructor(private http: HttpClient) {}
 

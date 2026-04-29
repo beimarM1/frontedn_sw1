@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { WorkflowService } from '../services/workflow.service';
 import { AuthService } from '../services/auth.service';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-tracking',
@@ -160,7 +161,7 @@ export class TrackingComponent implements OnInit {
 
   refresh() {
     if (!this.session) return;
-    this.http.get<any[]>(`http://localhost:8080/api/tramites/historial/usuario/${this.session.id}`).subscribe({
+    this.http.get<any[]>(`${environment.coreUrl}/tramites/historial/usuario/${this.session.id}`).subscribe({
       next: (items) => {
         this.tramites = items;
         // Resolver nombres
