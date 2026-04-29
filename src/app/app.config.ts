@@ -1,11 +1,111 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  provideBrowserGlobalErrorListeners,
+  importProvidersFrom,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
-
+import { provideHttpClient } from '@angular/common/http';
+import {
+  LucideAngularModule,
+  LayoutTemplate,
+  ClipboardCheck,
+  User,
+  ShieldCheck,
+  LogOut,
+  Search,
+  Bell,
+  Activity,
+  PieChart,
+  Settings,
+  Plus,
+  Save,
+  Zap,
+  Play,
+  Trash2,
+  MousePointer2,
+  ArrowRight,
+  Layers,
+  Circle,
+  Clipboard,
+  GitBranch,
+  Square,
+  Sparkles,
+  Send,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Bot,
+  X,
+  VolumeX,
+  Volume2,
+  Inbox,
+  PenTool,
+  ClipboardList,
+  LayoutDashboard,
+  PencilRuler,
+  Loader,
+  Share2,
+  Calendar,
+  RefreshCw, // CORREGIDO: Era RefreshCw para el error "refresh-cw"
+  RefreshCcw, // Lo mantenemos por si acaso
+  Timer, // AGREGADO: Para el error "timer"
+  CheckCircle2,
+  BarChart3,
+} from 'lucide-angular';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes)
-  ]
+    provideRouter(routes),
+    provideHttpClient(),
+    importProvidersFrom(
+      LucideAngularModule.pick({
+        LayoutTemplate,
+        ClipboardCheck,
+        User,
+        ShieldCheck,
+        LogOut,
+        Search,
+        Bell,
+        Activity,
+        PieChart,
+        Settings,
+        Plus,
+        Save,
+        Zap,
+        Play,
+        Trash2,
+        MousePointer2,
+        ArrowRight,
+        Layers,
+        Circle,
+        Clipboard,
+        GitBranch,
+        Square,
+        Sparkles,
+        Send,
+        Clock,
+        AlertTriangle,
+        CheckCircle,
+        Bot,
+        X,
+        VolumeX,
+        Volume2,
+        Inbox,
+        PenTool,
+        ClipboardList,
+        LayoutDashboard,
+        PencilRuler,
+        Loader,
+        Share2,
+        Calendar,
+        RefreshCw, // CORREGIDO
+        RefreshCcw,
+        Timer, // AGREGADO
+        CheckCircle2,
+        BarChart3,
+      }),
+    ),
+  ],
 };
