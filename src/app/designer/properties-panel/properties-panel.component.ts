@@ -32,11 +32,15 @@ import { WorkflowNode, WorkflowLane, FormField, WorkflowEdge } from '../../servi
 
           <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-3 mb-1">Tipo de Elemento</label>
           <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
-            <svg width="14" height="14" viewBox="0 0 14 14">
+            <svg width="14" height="14" viewBox="-7 -7 14 14">
               @switch (node.type) {
-                @case ('START') { <circle cx="7" cy="7" r="6" fill="none" stroke="#16a34a" stroke-width="1.5"/> }
-                @case ('END')   { <circle cx="7" cy="7" r="6" fill="#dc2626" stroke="#dc2626" stroke-width="3"/> }
-                @default        { <rect x="1" y="1" width="12" height="12" rx="2" fill="none" stroke="#64748b" stroke-width="1.5"/> }
+                @case ('START') { <circle r="5" fill="#333"/> }
+                @case ('END')   { <circle r="6" fill="none" stroke="#333" stroke-width="1.5"/><circle r="3" fill="#333"/> }
+                @case ('GATEWAY_XOR') { <polygon points="0,-6 6,0 0,6 -6,0" fill="none" stroke="#333" stroke-width="1.5"/> }
+                @case ('GATEWAY_AND') { <rect x="-1" y="-6" width="2" height="12" fill="#333"/> }
+                @case ('OBJECT') { <rect x="-6" y="-4" width="12" height="8" fill="none" stroke="#333" stroke-width="1.5"/> }
+                @case ('NOTE') { <path d="M-5 -6 L3 -6 L5 -4 L5 6 L-5 6 Z" fill="none" stroke="#333" stroke-width="1"/> }
+                @default        { <rect x="-6" y="-4" width="12" height="8" rx="4" fill="#e2e8f0" stroke="#334155" stroke-width="1"/> }
               }
             </svg>
             <span class="text-xs text-slate-600 font-medium">{{ getNodeTypeLabel() }}</span>
@@ -200,6 +204,31 @@ import { WorkflowNode, WorkflowLane, FormField, WorkflowEdge } from '../../servi
                     [class.focus:ring-red-400]="!isValidSpel(edge.condition)"
                     class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none font-mono bg-slate-50 text-[11px]"></textarea>
           
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-4 mb-1">
+            Ajuste Horizontal (Eje X)
+          </label>
+          <div class="flex items-center gap-3">
+            <input type="range"
+                   [(ngModel)]="edge.offsetX"
+                   (ngModelChange)="emitEdgeUpdate()"
+                   min="-300" max="300" step="5"
+                   class="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+            <span class="text-[10px] font-mono text-slate-500 w-10 text-right">{{ edge.offsetX || 0 }}px</span>
+          </div>
+
+          <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-3 mb-1">
+            Ajuste Vertical (Eje Y)
+          </label>
+          <div class="flex items-center gap-3">
+            <input type="range"
+                   [(ngModel)]="edge.offsetY"
+                   (ngModelChange)="emitEdgeUpdate()"
+                   min="-300" max="300" step="5"
+                   class="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+            <span class="text-[10px] font-mono text-slate-500 w-10 text-right">{{ edge.offsetY || 0 }}px</span>
+          </div>
+          <p class="text-[9px] text-slate-400 mt-2 italic">Usa estos controles para esquivar otros nodos o separar flechas paralelas.</p>
+          
           @if (!isValidSpel(edge.condition)) {
             <p class="text-[9px] text-red-500 font-bold mt-1">
               Sintaxis inválida. Las variables deben iniciar con # y usar '==' para comparar.
@@ -312,10 +341,11 @@ export class PropertiesPanelComponent implements OnChanges {
 
   getNodeTypeLabel(): string {
     const labels: Record<string, string> = {
-      START: 'Evento de Inicio', END: 'Evento de Fin',
-      TASK: 'Tarea Manual', SERVICE: 'Tarea de Servicio',
-      GATEWAY_XOR: 'Compuerta Exclusiva', GATEWAY_AND: 'Compuerta Paralela',
-      AGENT: 'Agente IA', TIMER: 'Evento Temporizador', MAIL: 'Correo'
+      START: 'Nodo Inicial', END: 'Nodo Final',
+      TASK: 'Nodo de Acción', SERVICE: 'Acción de Servicio',
+      GATEWAY_XOR: 'Nodo de Decisión / Fusión', GATEWAY_AND: 'Nodo de Bifurcación / Unión',
+      AGENT: 'Acción IA (Agente)', TIMER: 'Nodo de Tiempo', MAIL: 'Envío de Correo',
+      OBJECT: 'Nodo de Objeto', NOTE: 'Nota / Comentario'
     };
     return labels[this.node?.type || ''] || this.node?.type || '';
   }

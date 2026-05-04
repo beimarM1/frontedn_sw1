@@ -213,7 +213,7 @@ import { AuthService } from '../services/auth.service';
 
       <!-- ── Cuerpo ── -->
       <div class="flex-1 flex overflow-hidden relative">
-        <!-- Paleta BPMN 2.0 -->
+        <!-- Paleta de Nodos UML 2.5 -->
         <app-bpmn-palette></app-bpmn-palette>
 
         <!-- Lienzo SVG -->
@@ -236,7 +236,7 @@ import { AuthService } from '../services/auth.service';
               <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
                 <circle cx="1" cy="1" r="0.8" fill="#e2e8f0" />
               </pattern>
-              <!-- Flecha estándar BPMN: sólida, visible y con punta clara -->
+              <!-- Flecha estándar UML: sólida, visible y con punta clara -->
               <marker
                 id="arrow"
                 markerWidth="12"
@@ -245,7 +245,7 @@ import { AuthService } from '../services/auth.service';
                 refY="5"
                 orient="auto"
               >
-                <polygon points="0 0, 12 5, 0 10" fill="#fbbf24" />
+                <polygon points="0 0, 12 5, 0 10" fill="#334155" />
               </marker>
               <!-- Flecha para arista seleccionada -->
               <marker
@@ -340,10 +340,10 @@ import { AuthService } from '../services/auth.service';
               <path
                 [attr.d]="getPath(edge)"
                 fill="none"
-                [attr.stroke]="selectedEdge?.id === edge.id ? '#3b82f6' : '#fbbf24'"
-                [attr.stroke-width]="selectedEdge?.id === edge.id ? 3 : 2.5"
+                [attr.stroke]="selectedEdge?.id === edge.id ? '#3b82f6' : '#334155'"
+                [attr.stroke-width]="selectedEdge?.id === edge.id ? 2.5 : 2"
                 [attr.marker-end]="selectedEdge?.id === edge.id ? 'url(#arrow-selected)' : 'url(#arrow)'"
-                class="pointer-events-none"
+                class="pointer-events-none transition-all"
               />
               @if (edge.label) {
                 <text
@@ -358,27 +358,24 @@ import { AuthService } from '../services/auth.service';
                   {{ edge.label }}
                 </text>
               }
-              <!-- Botón ✕ en el medio de la flecha seleccionada -->
+              <!-- Manejador para arrastrar el codo (Handle) -->
               @if (selectedEdge?.id === edge.id) {
                 <g
                   [attr.transform]="
                     'translate(' + getEdgeMidX(edge) + ',' + getEdgeMidY(edge) + ')'
                   "
-                  class="cursor-pointer"
-                  (click)="deleteSelectedEdge()"
-                  title="Eliminar flecha"
                 >
-                  <circle r="9" fill="#ef4444" />
-                  <text
-                    text-anchor="middle"
-                    y="4"
-                    fill="white"
-                    font-size="11"
-                    font-weight="bold"
-                    class="pointer-events-none"
-                  >
-                    ✕
-                  </text>
+                  <!-- Área de clic invisible más grande -->
+                  <circle r="15" fill="transparent" class="cursor-move" (mousedown)="onEdgeHandleMouseDown($event, edge)" />
+                  
+                  <!-- El manejador visual -->
+                  <circle r="8" fill="white" stroke="#3b82f6" stroke-width="3" class="pointer-events-none" />
+                  
+                  <!-- Botón eliminar rojo -->
+                  <g transform="translate(22, 0)" class="cursor-pointer" (click)="deleteSelectedEdge()" title="Eliminar flecha">
+                    <circle r="10" fill="#ef4444" stroke="white" stroke-width="1" />
+                    <text text-anchor="middle" y="4" fill="white" font-size="12" font-weight="bold" class="pointer-events-none">✕</text>
+                  </g>
                 </g>
               }
             }
@@ -398,7 +395,7 @@ import { AuthService } from '../services/auth.service';
               />
             }
 
-            <!-- Nodos BPMN 2.0 -->
+            <!-- Nodos UML 2.5 Activity Diagram -->
             @for (node of workflow?.nodes; track node.id) {
               <g
                 [attr.transform]="'translate(' + (node.x || 200) + ',' + (node.y || 200) + ')'"
@@ -440,158 +437,108 @@ import { AuthService } from '../services/auth.service';
                 <!-- Figura según tipo -->
                 @switch (node.type) {
                   @case ('START') {
-                    <circle r="18" fill="#dcfce7" stroke="#16a34a" stroke-width="2" />
+                    <!-- Initial Node -->
+                    <circle r="14" fill="#333" stroke="none" />
                   }
                   @case ('END') {
-                    <circle r="18" fill="#fee2e2" stroke="#dc2626" stroke-width="4" />
-                    <circle r="10" fill="#dc2626" />
+                    <!-- Activity Final Node -->
+                    <circle r="18" fill="none" stroke="#333" stroke-width="2" />
+                    <circle r="10" fill="#333" />
                   }
                   @case ('GATEWAY_XOR') {
+                    <!-- Decision / Merge Node -->
                     <polygon
-                      points="0,-22 22,0 0,22 -22,0"
-                      fill="#fefce8"
-                      stroke="#ca8a04"
+                      points="0,-24 24,0 0,24 -24,0"
+                      fill="#fff"
+                      stroke="#333"
                       stroke-width="1.5"
-                    />
-                    <line
-                      x1="-7"
-                      y1="-7"
-                      x2="7"
-                      y2="7"
-                      stroke="#ca8a04"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
-                    />
-                    <line
-                      x1="7"
-                      y1="-7"
-                      x2="-7"
-                      y2="7"
-                      stroke="#ca8a04"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
                     />
                   }
                   @case ('GATEWAY_AND') {
-                    <polygon
-                      points="0,-22 22,0 0,22 -22,0"
-                      fill="#f0fdf4"
-                      stroke="#16a34a"
-                      stroke-width="1.5"
-                    />
-                    <line
-                      x1="0"
-                      y1="-10"
-                      x2="0"
-                      y2="10"
-                      stroke="#16a34a"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                    />
-                    <line
-                      x1="-10"
-                      y1="0"
-                      x2="10"
-                      y2="0"
-                      stroke="#16a34a"
-                      stroke-width="3"
-                      stroke-linecap="round"
-                    />
+                    <!-- Fork / Join Node (Barra Horizontal para cruzar carriles) -->
+                    <rect x="-40" y="-4" width="80" height="8" fill="#000" rx="1" />
                   }
                   @case ('TIMER') {
-                    <circle r="18" fill="#fef3c7" stroke="#d97706" stroke-width="2" />
-                    <line
-                      x1="0"
-                      y1="-10"
-                      x2="0"
-                      y2="0"
-                      stroke="#d97706"
+                    <!-- Time Event -->
+                    <polygon points="0,-18 18,18 -18,18" fill="none" stroke="#d97706" stroke-width="2" />
+                    <text x="0" y="10" font-size="12" font-weight="bold" text-anchor="middle" fill="#d97706">T</text>
+                  }
+                  @case ('OBJECT') {
+                    <!-- Object Node -->
+                    <rect
+                      x="-55"
+                      y="-25"
+                      width="110"
+                      height="50"
+                      fill="#fff"
+                      stroke="#000"
                       stroke-width="1.5"
-                      stroke-linecap="round"
-                    />
-                    <line
-                      x1="0"
-                      y1="0"
-                      x2="7"
-                      y2="4"
-                      stroke="#d97706"
-                      stroke-width="1.5"
-                      stroke-linecap="round"
                     />
                   }
+                  @case ('NOTE') {
+                    <!-- Note / Comment -->
+                    <path
+                      d="M-50 -30 L30 -30 L50 -10 L50 30 L-50 30 Z"
+                      fill="#fff"
+                      stroke="#000"
+                      stroke-width="1"
+                    />
+                    <path d="M30 -30 L30 -10 L50 -10" fill="none" stroke="#000" stroke-width="1"/>
+                  }
                   @case ('AGENT') {
+                    <!-- Action Node (AI) -->
                     <rect
-                      x="-50"
-                      y="-28"
-                      width="100"
-                      height="56"
-                      rx="6"
+                      x="-55"
+                      y="-25"
+                      width="110"
+                      height="50"
+                      rx="16"
                       fill="#eef2ff"
                       stroke="#6366f1"
                       stroke-width="1.5"
                       stroke-dasharray="5 3"
                     />
-                    <text x="-30" y="5" font-size="16" class="pointer-events-none">✨</text>
+                    <text x="-40" y="6" font-size="16" class="pointer-events-none">✨</text>
                   }
                   @case ('MAIL') {
+                    <!-- Action Node (Mail) -->
                     <rect
-                      x="-50"
-                      y="-28"
-                      width="100"
-                      height="56"
-                      rx="4"
+                      x="-55"
+                      y="-25"
+                      width="110"
+                      height="50"
+                      rx="16"
                       fill="#eff6ff"
                       stroke="#3b82f6"
                       stroke-width="1.5"
                     />
-                    <rect
-                      x="-30"
-                      y="-14"
-                      width="60"
-                      height="28"
-                      rx="2"
-                      fill="none"
-                      stroke="#3b82f6"
-                      stroke-width="1.2"
-                    />
-                    <path
-                      d="M-30 -14 L0 4 L30 -14"
-                      fill="none"
-                      stroke="#3b82f6"
-                      stroke-width="1.2"
-                    />
+                    <path d="M-45 -8 L-35 0 L-25 -8" fill="none" stroke="#3b82f6" stroke-width="1.2"/>
+                    <rect x="-45" y="-8" width="20" height="14" rx="1" fill="none" stroke="#3b82f6" stroke-width="1.2"/>
                   }
                   @case ('SERVICE') {
+                    <!-- Action Node (Service) -->
                     <rect
-                      x="-50"
-                      y="-28"
-                      width="100"
-                      height="56"
-                      rx="4"
+                      x="-55"
+                      y="-25"
+                      width="110"
+                      height="50"
+                      rx="16"
                       fill="#f8fafc"
                       stroke="#94a3b8"
                       stroke-width="1.5"
                     />
-                    <circle
-                      cx="-28"
-                      cy="-14"
-                      r="6"
-                      fill="none"
-                      stroke="#64748b"
-                      stroke-width="1.5"
-                    />
-                    <circle cx="-28" cy="-14" r="2.5" fill="#64748b" />
+                    <circle cx="-40" cy="0" r="4" fill="#64748b" />
                   }
                   @default {
-                    <!-- TASK -->
+                    <!-- Action Node (Task) -->
                     <rect
-                      x="-50"
-                      y="-28"
-                      width="100"
-                      height="56"
-                      rx="6"
-                      fill="white"
-                      stroke="#cbd5e1"
+                      x="-55"
+                      y="-25"
+                      width="110"
+                      height="50"
+                      rx="16"
+                      fill="#fff"
+                      stroke="#000"
                       stroke-width="1.5"
                       [class.stroke-blue-500]="selectedNode?.id === node.id"
                     />
@@ -632,7 +579,7 @@ import { AuthService } from '../services/auth.service';
                 <!-- Puertos de conexión (aparecen al hacer hover) -->
                 <!-- Puerto derecho: click para iniciar conexión -->
                 <circle
-                  cx="52"
+                  cx="56"
                   cy="0"
                   r="5"
                   fill="white"
@@ -644,7 +591,7 @@ import { AuthService } from '../services/auth.service';
                 />
                 <!-- Puerto izquierdo -->
                 <circle
-                  cx="-52"
+                  cx="-56"
                   cy="0"
                   r="5"
                   fill="white"
@@ -657,7 +604,19 @@ import { AuthService } from '../services/auth.service';
                 <!-- Puerto inferior -->
                 <circle
                   cx="0"
-                  cy="30"
+                  cy="25"
+                  r="5"
+                  fill="white"
+                  stroke="#3b82f6"
+                  stroke-width="2"
+                  class="opacity-0 hover:opacity-100 cursor-crosshair transition-opacity"
+                  (mousedown)="startConnect($event, node)"
+                  title="Conectar desde aquí"
+                />
+                <!-- Puerto superior -->
+                <circle
+                  cx="0"
+                  cy="-25"
                   r="5"
                   fill="white"
                   stroke="#3b82f6"
@@ -725,7 +684,9 @@ export class DesignerComponent implements OnInit, OnDestroy {
   @ViewChild('aiBar') aiBar!: AiBarComponent;
 
   protected draggingNode: WorkflowNode | null = null;
+  protected draggingEdgeHandle: WorkflowEdge | null = null;
   private offset = { x: 0, y: 0 };
+  private initialEdgeOffset = { x: 0, y: 0 };
   private socketSub: Subscription | null = null;
 
   private route = inject(ActivatedRoute);
@@ -917,6 +878,13 @@ export class DesignerComponent implements OnInit, OnDestroy {
       this.nodeMoveRaw$.next({ nodeId: this.draggingNode.id, x, y });
     }
     
+    if (this.draggingEdgeHandle) {
+      const dx = e.clientX - this.offset.x;
+      const dy = e.clientY - this.offset.y;
+      this.draggingEdgeHandle.offsetX = this.initialEdgeOffset.x + dx;
+      this.draggingEdgeHandle.offsetY = this.initialEdgeOffset.y + dy;
+    }
+
     if (this.connectingFrom) {
       const canvas = document.getElementById('workflow-canvas')!;
       const rect = canvas.getBoundingClientRect();
@@ -927,6 +895,7 @@ export class DesignerComponent implements OnInit, OnDestroy {
   @HostListener('window:mouseup')
   onMouseUp() {
     this.draggingNode = null;
+    this.draggingEdgeHandle = null;
     this.connectingFrom = null;
     this.connectPreview = null;
   }
@@ -1107,37 +1076,85 @@ export class DesignerComponent implements OnInit, OnDestroy {
 
   // ── Conectores & Coordenadas ───────────────────────────────────────────────
   getPath(edge: WorkflowEdge): string {
-    const s = this.coords(edge.sourceId);
-    const t = this.coords(edge.targetId);
+    const sNode = this.workflow?.nodes.find(n => n.id === edge.sourceId);
+    const tNode = this.workflow?.nodes.find(n => n.id === edge.targetId);
+    if (!sNode || !tNode) return '';
+
+    let sx = sNode.x || 0;
+    let sy = sNode.y || 0;
+    let tx = tNode.x || 0;
+    let ty = tNode.y || 0;
+
+    // --- Lógica de separación automática para evitar superposición ---
+    const incoming = this.workflow?.edges.filter(e => e.targetId === tNode.id) || [];
+    const outgoing = this.workflow?.edges.filter(e => e.sourceId === sNode.id) || [];
+    const inIdx = incoming.findIndex(e => e.id === edge.id);
+    const outIdx = outgoing.findIndex(e => e.id === edge.id);
     
-    const targetNode = this.workflow?.nodes.find(n => n.id === edge.targetId);
-    const isSmall = ['START', 'END', 'TIMER', 'GATEWAY_XOR', 'GATEWAY_AND'].includes(targetNode?.type || '');
-    const radiusX = isSmall ? 22 : 50;
-    const radiusY = isSmall ? 22 : 28;
-    
-    let tx = t.x;
-    let ty = t.y;
-    
-    if (Math.abs(t.x - s.x) > 20) {
-      tx = (t.x > s.x) ? t.x - radiusX - 4 : t.x + radiusX + 4;
+    // Si hay varias flechas, las desplazamos 20px entre sí
+    const autoInX = incoming.length > 1 ? (inIdx - (incoming.length - 1) / 2) * 20 : 0;
+    const autoOutX = outgoing.length > 1 ? (outIdx - (outgoing.length - 1) / 2) * 20 : 0;
+
+    // --- Lógica de Puntos de Contacto para Barras Horizontales ---
+    if (tNode.type === 'GATEWAY_AND') {
+      ty = (sy < ty) ? ty - 4 : ty + 4; // Entrar por arriba o abajo
+      tx += autoInX; 
     } else {
-      ty = (t.y > s.y) ? t.y - radiusY - 4 : t.y + radiusY + 4;
+      tx += autoInX;
     }
 
-    const mx = (s.x + tx) / 2;
-    return `M${s.x} ${s.y} C${mx} ${s.y} ${mx} ${ty} ${tx} ${ty}`;
+    if (sNode.type === 'GATEWAY_AND') {
+      sy = (ty > sy) ? sy + 4 : sy - 4; // Salir por arriba o abajo
+      sx += autoOutX;
+    } else {
+      sx += autoOutX;
+    }
+
+    const getR = (type: string) => {
+      if (['START', 'END', 'TIMER', 'GATEWAY_XOR'].includes(type)) return { x: 16, y: 16 };
+      if (type === 'GATEWAY_AND') return { x: 40, y: 0 }; 
+      return { x: 55, y: 25 }; 
+    };
+
+    const sR = getR(sNode.type);
+    const tR = getR(tNode.type);
+    const dx = tx - sx;
+    const dy = ty - sy;
+
+    const midX = sx + (tx - sx) / 2 + (edge.offsetX || 0);
+    const midY = sy + (ty - sy) / 2 + (edge.offsetY || 0);
+
+    if (Math.abs(dy) > Math.abs(dx)) {
+      const startY = sy + (dy > 0 ? sR.y : -sR.y);
+      const endY = ty - (dy > 0 ? tR.y + 6 : -tR.y - 6);
+      return `M ${sx} ${startY} L ${sx} ${midY} L ${tx} ${midY} L ${tx} ${endY}`;
+    } else {
+      const startX = sx + (dx > 0 ? sR.x : -sR.x);
+      const endX = tx - (dx > 0 ? tR.x + 6 : -tR.x - 6);
+      return `M ${startX} ${sy} L ${midX} ${sy} L ${midX} ${ty} L ${endX} ${ty}`;
+    }
   }
 
   getEdgeMidX(edge: WorkflowEdge): number {
     const s = this.coords(edge.sourceId);
     const t = this.coords(edge.targetId);
-    return (s.x + t.x) / 2;
+    const baseMidX = (s.x + t.x) / 2;
+    return baseMidX + (edge.offsetX || 0);
   }
 
   getEdgeMidY(edge: WorkflowEdge): number {
     const s = this.coords(edge.sourceId);
     const t = this.coords(edge.targetId);
-    return (s.y + t.y) / 2;
+    const baseMidY = (s.y + t.y) / 2;
+    return baseMidY + (edge.offsetY || 0);
+  }
+
+  onEdgeHandleMouseDown(e: MouseEvent, edge: WorkflowEdge) {
+    e.stopPropagation();
+    this.draggingEdgeHandle = edge;
+    this.initialEdgeOffset = { x: edge.offsetX || 0, y: edge.offsetY || 0 };
+    this.offset = { x: e.clientX, y: e.clientY };
+    this.pushHistory();
   }
 
   coords(id: string) {

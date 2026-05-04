@@ -39,6 +39,8 @@ export interface WorkflowEdge {
   targetId: string;
   condition?: string;
   label?: string;
+  offsetX?: number; 
+  offsetY?: number;
 }
 
 // ─── Carril (Swimlane) ────────────────────────────────────────────────────────
