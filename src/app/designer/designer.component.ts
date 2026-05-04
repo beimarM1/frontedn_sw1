@@ -855,6 +855,15 @@ export class DesignerComponent implements OnInit, OnDestroy {
     this.pushHistory();
   }
 
+  onEdgeHandleMouseDown(e: MouseEvent, edge: WorkflowEdge) {
+    e.stopPropagation();
+    e.preventDefault();
+    this.draggingEdgeHandle = edge;
+    // Guardamos el offset actual de la flecha y la posición del mouse al empezar
+    this.initialEdgeOffset = { x: edge.offsetX || 0, y: edge.offsetY || 0 };
+    this.offset = { x: e.clientX, y: e.clientY };
+  }
+
   onCanvasMouseDown(e: MouseEvent) {
     if (e.target === e.currentTarget) {
       this.selectedNode = null;
@@ -1149,13 +1158,8 @@ export class DesignerComponent implements OnInit, OnDestroy {
     return baseMidY + (edge.offsetY || 0);
   }
 
-  onEdgeHandleMouseDown(e: MouseEvent, edge: WorkflowEdge) {
-    e.stopPropagation();
-    this.draggingEdgeHandle = edge;
-    this.initialEdgeOffset = { x: edge.offsetX || 0, y: edge.offsetY || 0 };
-    this.offset = { x: e.clientX, y: e.clientY };
-    this.pushHistory();
-  }
+
+
 
   coords(id: string) {
     const n = this.workflow?.nodes.find((n) => n.id === id);
