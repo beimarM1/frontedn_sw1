@@ -179,6 +179,48 @@ import { AuthService } from '../services/auth.service';
                           <span class="text-sm text-white/70">{{ field.placeholder || 'Marcar si aplica' }}</span>
                         </label>
                       }
+                      @case ('grid') {
+                        <div class="border border-white/10 rounded-lg overflow-hidden bg-white/5">
+                          <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm text-white/70">
+                              <thead class="bg-white/10 text-xs uppercase">
+                                <tr>
+                                  @for (col of field.gridColumns; track col.id) {
+                                    <th class="px-3 py-2">{{ col.label }}</th>
+                                  }
+                                  <th class="px-3 py-2 text-right">
+                                    <button (click)="addRow(field.id, field.gridColumns)" class="text-[10px] bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded transition-all">
+                                      + Fila
+                                    </button>
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @if (!formData[field.id] || formData[field.id].length === 0) {
+                                  <tr>
+                                    <td [attr.colspan]="(field.gridColumns?.length || 0) + 1" class="px-3 py-4 text-center text-white/40 italic">
+                                      No hay registros en la grilla.
+                                    </td>
+                                  </tr>
+                                }
+                                @for (row of formData[field.id]; track $index; let rIdx = $index) {
+                                  <tr class="border-t border-white/5 hover:bg-white/5">
+                                    @for (col of field.gridColumns; track col.id) {
+                                      <td class="px-2 py-2">
+                                        <input [type]="col.type || 'text'" [(ngModel)]="row[col.id]"
+                                          class="w-full rounded bg-transparent border border-white/10 px-2 py-1 text-xs outline-none focus:border-indigo-500 text-white placeholder-white/30" />
+                                      </td>
+                                    }
+                                    <td class="px-2 py-2 text-right">
+                                      <button (click)="removeRow(field.id, rIdx)" class="text-red-400 hover:text-red-300 text-lg leading-none">&times;</button>
+                                    </td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      }
                       @default {
                         <input type="text" [(ngModel)]="formData[field.id]" [placeholder]="field.placeholder || ''"
                           class="w-full rounded-lg px-3 py-2 text-sm border border-white/10 outline-none focus:border-indigo-500"
@@ -326,7 +368,11 @@ export class WorklistComponent implements OnInit {
           this.formFields  = node?.form?.fields || [];
           this.loadingForm = false;
           this.formFields.forEach((f: any) => {
-            this.formData[f.id] = f.defaultValue ?? '';
+            if (f.type === 'grid') {
+              this.formData[f.id] = f.defaultValue ? [...f.defaultValue] : [];
+            } else {
+              this.formData[f.id] = f.defaultValue ?? '';
+            }
           });
         },
         error: () => { this.formFields = []; this.loadingForm = false; }
@@ -347,6 +393,23 @@ export class WorklistComponent implements OnInit {
     if (input.files && input.files.length > 0) {
       // Guardamos el nombre del archivo (en producción se subiría al servidor)
       this.formData[fieldId] = input.files[0].name;
+    }
+  }
+
+  addRow(fieldId: string, columns: any[]) {
+    if (!this.formData[fieldId]) {
+      this.formData[fieldId] = [];
+    }
+    const newRow: any = {};
+    if (columns && Array.isArray(columns)) {
+      columns.forEach(col => newRow[col.id] = '');
+    }
+    this.formData[fieldId].push(newRow);
+  }
+
+  removeRow(fieldId: string, rowIndex: number) {
+    if (this.formData[fieldId]) {
+      this.formData[fieldId].splice(rowIndex, 1);
     }
   }
 

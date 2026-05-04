@@ -7,10 +7,11 @@ import { environment } from '../../environments/environment';
 export interface FormField {
   id: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'textarea' | 'file' | 'checkbox';
+  type: 'text' | 'number' | 'date' | 'select' | 'textarea' | 'file' | 'checkbox' | 'grid';
   required: boolean;
   placeholder?: string;
   options?: string[];     // Para tipo 'select'
+  gridColumns?: { id: string, label: string, type: 'text'|'number'|'date' }[]; // Para tipo 'grid'
   defaultValue?: any;
 }
 

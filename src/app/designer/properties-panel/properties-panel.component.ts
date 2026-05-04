@@ -130,6 +130,7 @@ import { WorkflowNode, WorkflowLane, FormField, WorkflowEdge } from '../../servi
                       <option value="select">Selección</option>
                       <option value="textarea">Área texto</option>
                       <option value="file">Archivo</option>
+                      <option value="grid">Grilla / Tabla</option>
                     </select>
                   </div>
                   <div class="flex items-end pb-1.5">
@@ -157,6 +158,37 @@ import { WorkflowNode, WorkflowLane, FormField, WorkflowEdge } from '../../servi
                         @for (opt of field.options; track opt) {
                           <span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-medium">{{ opt }}</span>
                         }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Columnas para tipo Grilla -->
+                @if (field.type === 'grid') {
+                  <div class="mt-3 border-t border-slate-200 pt-3">
+                    <div class="flex justify-between items-center mb-2">
+                      <label class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Columnas de la Grilla</label>
+                      <button (click)="addColumn(field)"
+                              class="text-[9px] bg-slate-200 text-slate-600 hover:bg-slate-300 px-2 py-1 rounded transition-all">
+                        + Columna
+                      </button>
+                    </div>
+                    
+                    @if (!field.gridColumns?.length) {
+                      <div class="text-center py-2 text-slate-400 text-[10px] italic">No hay columnas definidas</div>
+                    }
+                    
+                    @for (col of field.gridColumns; track col.id; let cIdx = $index) {
+                      <div class="flex gap-2 items-center mb-1.5">
+                        <input type="text" [(ngModel)]="col.label" (ngModelChange)="emitUpdate()" placeholder="Nombre col..."
+                               class="flex-1 border border-slate-200 rounded-md px-2 py-1 text-[10px] text-slate-700 focus:outline-none bg-white" />
+                        <select [(ngModel)]="col.type" (ngModelChange)="emitUpdate()"
+                                class="w-20 border border-slate-200 rounded-md px-1 py-1 text-[10px] text-slate-700 focus:outline-none bg-white">
+                          <option value="text">Texto</option>
+                          <option value="number">Número</option>
+                          <option value="date">Fecha</option>
+                        </select>
+                        <button (click)="removeColumn(field, cIdx)" class="text-red-400 hover:text-red-600 text-sm leading-none">&times;</button>
                       </div>
                     }
                   </div>
@@ -335,6 +367,23 @@ export class PropertiesPanelComponent implements OnChanges {
   removeField(index: number) {
     if (this.node?.form?.fields) {
       this.node.form.fields.splice(index, 1);
+      this.emitUpdate();
+    }
+  }
+
+  addColumn(field: FormField) {
+    if (!field.gridColumns) field.gridColumns = [];
+    field.gridColumns.push({
+      id: 'c_' + Date.now(),
+      label: 'Columna ' + (field.gridColumns.length + 1),
+      type: 'text'
+    });
+    this.emitUpdate();
+  }
+
+  removeColumn(field: FormField, colIndex: number) {
+    if (field.gridColumns) {
+      field.gridColumns.splice(colIndex, 1);
       this.emitUpdate();
     }
   }
