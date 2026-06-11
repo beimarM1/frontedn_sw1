@@ -9,7 +9,7 @@ export interface PaletteItem {
   title: string;
   group: 'control' | 'actions' | 'routing' | 'ai' | 'artifacts';
 }
-
+ 
 @Component({
   selector: 'app-bpmn-palette',
   standalone: true,

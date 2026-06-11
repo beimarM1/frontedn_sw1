@@ -1,6 +1,5 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
-import { Subject, Observable, throttleTime } from 'rxjs';
-import { Client } from '@stomp/stompjs';
+import { Subject, Observable, throttleTime, BehaviorSubject } from 'rxjs';import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { environment } from '../../environments/environment';
 
@@ -27,13 +26,11 @@ export interface PresenceUpdate {
 
 @Injectable({ providedIn: 'root' })
 export class WorkflowSocketService implements OnDestroy {
-
   private stompClient: Client | null = null;
 
   // --- Subjects internos ---
-  private updatesSubject  = new Subject<WorkflowUpdate>();
-  private presenceSubject = new Subject<PresenceUpdate>();
-
+  private updatesSubject = new Subject<WorkflowUpdate>();
+private presenceSubject = new BehaviorSubject<PresenceUpdate>({ count: 1, sessions: [] });
   constructor(private zone: NgZone) {}
 
   // ── Conexión ──────────────────────────────────────────────────────────────
@@ -52,7 +49,7 @@ export class WorkflowSocketService implements OnDestroy {
     });
 
     this.stompClient.onConnect = () => {
-      console.log('[Socket] Conectado al workflow - workflow-socket.service.ts:55', workflowId);
+      console.log('[Socket] Conectado al workflow - workflow-socket.service.ts:52', workflowId);
 
       // Canal de actualizaciones del diagrama
       this.stompClient!.subscribe(`/topic/workflow/${workflowId}`, (msg) => {
@@ -66,7 +63,10 @@ export class WorkflowSocketService implements OnDestroy {
     };
 
     this.stompClient.onStompError = (frame) => {
-      console.error('[Socket] STOMP Error: - workflow-socket.service.ts:69', frame.headers['message']);
+      console.error(
+        '[Socket] STOMP Error:',
+        frame.headers['message'],
+      );
     };
 
     this.stompClient.activate();
@@ -82,7 +82,7 @@ export class WorkflowSocketService implements OnDestroy {
     if (!this.stompClient?.connected) return;
     this.stompClient.publish({
       destination: `/app/workflow/${workflowId}/update`,
-      body: JSON.stringify({ userId, type: 'NODE_MOVE', payload })
+      body: JSON.stringify({ userId, type: 'NODE_MOVE', payload }),
     });
   }
 
@@ -91,7 +91,7 @@ export class WorkflowSocketService implements OnDestroy {
     if (!this.stompClient?.connected) return;
     this.stompClient.publish({
       destination: `/app/workflow/${workflowId}/update`,
-      body: JSON.stringify(update)
+      body: JSON.stringify(update),
     });
   }
 

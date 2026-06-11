@@ -1,13 +1,18 @@
 import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
-export type UserRole = 'DISEÑADOR_POLITICAS' | 'FUNCIONARIO' | 'USUARIO_FINAL' | 'AGENTE_IA';
+export type UserRole = 'DISEÑADOR_POLITICAS' | 'FUNCIONARIO' | 'USUARIO_FINAL' | 'AGENTE_IA' | 'JEFE_POLITICAS' | 'CLIENTE_MOVIL';
 
 export interface UserSession {
   id: string;
   name: string;
   role: UserRole;
   email: string;
+  cargo?: string;
 }
 
 @Injectable({
@@ -16,7 +21,7 @@ export interface UserSession {
 export class AuthService {
   private session = signal<UserSession | null>(null);
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private http: HttpClient) {
     // Restaurar sesión si existe en localStorage
     const saved = localStorage.getItem('btp_session');
     if (saved) {
@@ -29,26 +34,53 @@ export class AuthService {
   }
 
   isLoggedIn() {
-    return this.session() !== null;
+    return this.session() !== null && localStorage.getItem('jwt_token') !== null;
   }
 
-  login(role: UserRole) {
-    // Simulación de login exitoso
-    const mockUser: UserSession = {
-      id: 'usr-' + Math.random().toString(36).substr(2, 9),
-      name: this.formatName(role),
-      role: role,
-      email: `${role.toLowerCase()}@uagrm.edu.bo`
-    };
+  login(email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${environment.coreUrl}/auth/login`, { email, password }).pipe(
+      tap((res) => {
+        localStorage.setItem('jwt_token', res.token);
+        const user: UserSession = {
+          id: res.id,   // ← ID real de MongoDB, estable entre sesiones
+          name: res.name || this.formatName(res.role || 'USUARIO'),
+          role: res.role as UserRole,
+          email: res.email || email,
+          cargo: res.cargo
+        };
+        this.session.set(user);
+        localStorage.setItem('btp_session', JSON.stringify(user));
+      })
+    );
+  }
 
-    this.session.set(mockUser);
-    localStorage.setItem('btp_session', JSON.stringify(mockUser));
-    this.router.navigate(['/dashboard']);
+  register(name: string, email: string, password: string, role: UserRole, cargo?: string): Observable<any> {
+    return this.http.post<any>(`${environment.coreUrl}/auth/register`, {
+      name,
+      email,
+      password,
+      role,
+      cargo
+    }).pipe(
+      tap((res) => {
+        localStorage.setItem('jwt_token', res.token);
+        const user: UserSession = {
+          id: res.id,   // ← ID real de MongoDB, estable entre sesiones
+          name: res.name || name,
+          role: res.role as UserRole,
+          email: res.email || email,
+          cargo: res.cargo
+        };
+        this.session.set(user);
+        localStorage.setItem('btp_session', JSON.stringify(user));
+      })
+    );
   }
 
   logout() {
     this.session.set(null);
     localStorage.removeItem('btp_session');
+    localStorage.removeItem('jwt_token');
     this.router.navigate(['/login']);
   }
 

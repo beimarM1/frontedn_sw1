@@ -7,7 +7,7 @@ import { WorkflowNode, WorkflowLane, FormField, WorkflowEdge } from '../../servi
   selector: 'app-properties-panel',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
+  template: `    
     <div class="w-72 bg-white border-l border-slate-200 flex flex-col h-full shadow-xl z-20 overflow-y-auto"
          [class.hidden]="!node && !edge">
 
@@ -141,6 +141,25 @@ import { WorkflowNode, WorkflowLane, FormField, WorkflowEdge } from '../../servi
                     </label>
                   </div>
                 </div>
+
+                <!-- Configuración de Permisos Documentales (tipo Archivo) -->
+                @if (field.type === 'file') {
+                  <div class="mt-3 p-2.5 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <label class="block text-[9px] text-indigo-700 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                      Política de Acceso al Documento
+                    </label>
+                    <select [(ngModel)]="field.permission"
+                            (ngModelChange)="emitUpdate()"
+                            class="w-full border border-indigo-200 rounded-md px-2 py-1.5 text-xs text-indigo-900 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white cursor-pointer">
+                      <option value="NONE">🚫  Oculto (NONE) — Ni visible</option>
+                      <option value="READ">👁️  Solo Lectura (READ) — Sin editar</option>
+                      <option value="UPLOAD">☁️  Solo Subida (UPLOAD) — Carga inicial</option>
+                      <option value="WRITE">✏️  Edición Colaborativa (WRITE) — Yjs + Quill</option>
+                    </select>
+                    <p class="text-[9px] text-indigo-400 mt-1.5 italic">Define qué puede hacer cada funcionario con este archivo en este paso del flujo.</p>
+                  </div>
+                }
 
                 <!-- Opciones para tipo Selección -->
                 @if (field.type === 'select') {
@@ -359,7 +378,8 @@ export class PropertiesPanelComponent implements OnChanges {
       id: 'f_' + Date.now(),
       label: 'Nuevo Campo',
       type: 'text',
-      required: false
+      required: false,
+      permission: 'WRITE'
     });
     this.emitUpdate();
   }

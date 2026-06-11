@@ -6,12 +6,14 @@ import { DesignerComponent } from './designer/designer.component';
 import { WorklistComponent } from './worklist/worklist.component';
 import { TrackingComponent } from './tracking/tracking.component';
 import { WorkflowListComponent } from './workflow-list/workflow-list.component';
+import { authGuard } from './services/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { 
     path: '', 
     component: MainLayoutComponent,
+    canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'workflows', component: WorkflowListComponent },

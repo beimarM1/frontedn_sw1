@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, HostListener, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  HostListener,
+  ViewChild,
+  ChangeDetectorRef,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -342,7 +350,9 @@ import { AuthService } from '../services/auth.service';
                 fill="none"
                 [attr.stroke]="selectedEdge?.id === edge.id ? '#3b82f6' : '#334155'"
                 [attr.stroke-width]="selectedEdge?.id === edge.id ? 2.5 : 2"
-                [attr.marker-end]="selectedEdge?.id === edge.id ? 'url(#arrow-selected)' : 'url(#arrow)'"
+                [attr.marker-end]="
+                  selectedEdge?.id === edge.id ? 'url(#arrow-selected)' : 'url(#arrow)'
+                "
                 class="pointer-events-none transition-all"
               />
               @if (edge.label) {
@@ -366,15 +376,40 @@ import { AuthService } from '../services/auth.service';
                   "
                 >
                   <!-- Área de clic invisible más grande -->
-                  <circle r="15" fill="transparent" class="cursor-move" (mousedown)="onEdgeHandleMouseDown($event, edge)" />
-                  
+                  <circle
+                    r="15"
+                    fill="transparent"
+                    class="cursor-move"
+                    (mousedown)="onEdgeHandleMouseDown($event, edge)"
+                  />
+
                   <!-- El manejador visual -->
-                  <circle r="8" fill="white" stroke="#3b82f6" stroke-width="3" class="pointer-events-none" />
-                  
+                  <circle
+                    r="8"
+                    fill="white"
+                    stroke="#3b82f6"
+                    stroke-width="3"
+                    class="pointer-events-none"
+                  />
+  
                   <!-- Botón eliminar rojo -->
-                  <g transform="translate(22, 0)" class="cursor-pointer" (click)="deleteSelectedEdge()" title="Eliminar flecha">
+                  <g
+                    transform="translate(22, 0)"
+                    class="cursor-pointer"
+                    (click)="deleteSelectedEdge()"
+                    title="Eliminar flecha"
+                  >
                     <circle r="10" fill="#ef4444" stroke="white" stroke-width="1" />
-                    <text text-anchor="middle" y="4" fill="white" font-size="12" font-weight="bold" class="pointer-events-none">✕</text>
+                    <text
+                      text-anchor="middle"
+                      y="4"
+                      fill="white"
+                      font-size="12"
+                      font-weight="bold"
+                      class="pointer-events-none"
+                    >
+                      ✕
+                    </text>
                   </g>
                 </g>
               }
@@ -414,8 +449,18 @@ import { AuthService } from '../services/auth.service';
                     class="pointer-events-none"
                     style="filter: drop-shadow(0 0 8px #fbbf24);"
                   >
-                    <animate attributeName="r" values="24;28;24" dur="1.5s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
+                    <animate
+                      attributeName="r"
+                      values="24;28;24"
+                      dur="1.5s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="1;0.5;1"
+                      dur="1.5s"
+                      repeatCount="indefinite"
+                    />
                   </circle>
                 }
                 <!-- Selección highlight -->
@@ -460,8 +505,22 @@ import { AuthService } from '../services/auth.service';
                   }
                   @case ('TIMER') {
                     <!-- Time Event -->
-                    <polygon points="0,-18 18,18 -18,18" fill="none" stroke="#d97706" stroke-width="2" />
-                    <text x="0" y="10" font-size="12" font-weight="bold" text-anchor="middle" fill="#d97706">T</text>
+                    <polygon
+                      points="0,-18 18,18 -18,18"
+                      fill="none"
+                      stroke="#d97706"
+                      stroke-width="2"
+                    />
+                    <text
+                      x="0"
+                      y="10"
+                      font-size="12"
+                      font-weight="bold"
+                      text-anchor="middle"
+                      fill="#d97706"
+                    >
+                      T
+                    </text>
                   }
                   @case ('OBJECT') {
                     <!-- Object Node -->
@@ -483,7 +542,7 @@ import { AuthService } from '../services/auth.service';
                       stroke="#000"
                       stroke-width="1"
                     />
-                    <path d="M30 -30 L30 -10 L50 -10" fill="none" stroke="#000" stroke-width="1"/>
+                    <path d="M30 -30 L30 -10 L50 -10" fill="none" stroke="#000" stroke-width="1" />
                   }
                   @case ('AGENT') {
                     <!-- Action Node (AI) -->
@@ -512,8 +571,22 @@ import { AuthService } from '../services/auth.service';
                       stroke="#3b82f6"
                       stroke-width="1.5"
                     />
-                    <path d="M-45 -8 L-35 0 L-25 -8" fill="none" stroke="#3b82f6" stroke-width="1.2"/>
-                    <rect x="-45" y="-8" width="20" height="14" rx="1" fill="none" stroke="#3b82f6" stroke-width="1.2"/>
+                    <path
+                      d="M-45 -8 L-35 0 L-25 -8"
+                      fill="none"
+                      stroke="#3b82f6"
+                      stroke-width="1.2"
+                    />
+                    <rect
+                      x="-45"
+                      y="-8"
+                      width="20"
+                      height="14"
+                      rx="1"
+                      fill="none"
+                      stroke="#3b82f6"
+                      stroke-width="1.2"
+                    />
                   }
                   @case ('SERVICE') {
                     <!-- Action Node (Service) -->
@@ -655,8 +728,6 @@ import { AuthService } from '../services/auth.service';
     `,
   ],
 })
-
-
 export class DesignerComponent implements OnInit, OnDestroy {
   workflow: WorkflowDefinition | null = null;
   workflowId = '';
@@ -671,7 +742,7 @@ export class DesignerComponent implements OnInit, OnDestroy {
   ];
 
   private readonly userColors = ['#6366f1', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#ef4444'];
-  
+
   activeNodeId: string | null = null;
   currentTramiteId: string | null = null;
 
@@ -696,7 +767,7 @@ export class DesignerComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   readonly history = inject(HistoryService);
   private elevenLabs = inject(ElevenLabsService);
-
+  private cdr = inject(ChangeDetectorRef); // 🚀 ¡AGREGA ESTA LÍNEA!
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit() {
     this.route.params.subscribe((p) => {
@@ -722,16 +793,48 @@ export class DesignerComponent implements OnInit, OnDestroy {
               color: this.userColors[i % this.userColors.length],
             })),
           ];
-        })
+        }),
       );
 
-      // 3. Throttle para movimientos de nodos
-      this.socketSub.add(
+      /// 3. Throttle para movimientos de nodos
+       this.socketSub.add(
         this.nodeMoveRaw$.pipe(throttleTime(50)).subscribe((payload) => {
           const user = this.authService.getSession()();
           const name = user ? user.name : this.mySessionId;
           this.socket.sendNodeMove(this.workflowId, this.mySessionId, { ...payload, _name: name });
-        })
+        }),
+      );
+
+      this.socketSub.add(
+        this.socket.getPresence().subscribe((presence: any) => {
+          if (!presence) return;
+
+          // Conteo total de personas conectadas según el servidor
+          const totalConectados = presence.count || 1;
+
+          // Calculamos los colaboradores remotos restando nuestra propia sesión (-1)
+          const remoteCount = Math.max(0, totalConectados - 1);
+
+          console.log(
+            '[Presence] Usuarios totales en el servidor:',
+            totalConectados,
+            'Remotos:',
+            remoteCount,
+          );
+
+          // Reconstruimos el array de usuarios para los avatares de la barra superior
+          this.activeUsers = [
+            { id: this.mySessionId, name: 'Tú', color: '#10b981' },
+            ...Array.from({ length: remoteCount }, (_, i) => ({
+              id: `remote_${i}_${Date.now()}`, // ID único para evitar colisiones en el track de Angular
+              name: `Colaborador ${i + 1}`,
+              color: this.userColors[i % this.userColors.length],
+            })),
+          ];
+
+          // 🔥 OBLIGATORIO: Fuerza a Angular a redibujar los círculos de los avatares en la UI de inmediato
+          this.cdr.detectChanges();
+        }),
       );
     });
 
@@ -792,8 +895,8 @@ export class DesignerComponent implements OnInit, OnDestroy {
 
   launchProcess() {
     if (!this.workflow?.id) return;
-    
-    const startNode = this.workflow.nodes.find(n => n.type === 'START');
+
+    const startNode = this.workflow.nodes.find((n) => n.type === 'START');
     if (!startNode) {
       alert('Error: El diagrama debe tener un nodo de inicio.');
       return;
@@ -806,7 +909,7 @@ export class DesignerComponent implements OnInit, OnDestroy {
         this.activeNodeId = tramite.currentStepId || startNode.id;
         alert(`¡Proceso iniciado! ID: ${tramite.id}`);
       },
-      error: () => alert('Error al iniciar el trámite.')
+      error: () => alert('Error al iniciar el trámite.'),
     });
   }
 
@@ -822,7 +925,9 @@ export class DesignerComponent implements OnInit, OnDestroy {
   }
 
   // ── Mouse Events ───────────────────────────────────────────────────────────
-  onDragOver(e: DragEvent) { e.preventDefault(); }
+  onDragOver(e: DragEvent) {
+    e.preventDefault();
+  }
 
   onDrop(e: DragEvent) {
     e.preventDefault();
@@ -841,7 +946,10 @@ export class DesignerComponent implements OnInit, OnDestroy {
     const node: WorkflowNode = {
       id: 'node-' + Date.now(),
       label: this.defaultLabel(type),
-      type, x, y, assignedRole: role,
+      type,
+      x,
+      y,
+      assignedRole: role,
     };
     this.workflow.nodes.push(node);
     this.broadcast('NODE_ADD', node);
@@ -886,7 +994,7 @@ export class DesignerComponent implements OnInit, OnDestroy {
       }
       this.nodeMoveRaw$.next({ nodeId: this.draggingNode.id, x, y });
     }
-    
+
     if (this.draggingEdgeHandle) {
       const dx = e.clientX - this.offset.x;
       const dy = e.clientY - this.offset.y;
@@ -937,6 +1045,8 @@ export class DesignerComponent implements OnInit, OnDestroy {
       targetId: targetNode.id,
     };
     this.workflow.edges.push(edge);
+
+    // ¡BROADCAST AGREGADO!
     this.broadcast('EDGE_ADD', edge);
     this.connectingFrom = null;
   }
@@ -948,9 +1058,18 @@ export class DesignerComponent implements OnInit, OnDestroy {
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
     if (e.ctrlKey || e.metaKey) {
-      if (e.key === 'z') { e.preventDefault(); this.undo(); }
-      if (e.key === 'y') { e.preventDefault(); this.redo(); }
-      if (e.key === 's') { e.preventDefault(); this.saveWorkflow(); }
+      if (e.key === 'z') {
+        e.preventDefault();
+        this.undo();
+      }
+      if (e.key === 'y') {
+        e.preventDefault();
+        this.redo();
+      }
+      if (e.key === 's') {
+        e.preventDefault();
+        this.saveWorkflow();
+      }
     }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (this.selectedNode) this.deleteSelectedNode();
@@ -981,12 +1100,16 @@ export class DesignerComponent implements OnInit, OnDestroy {
       this.pushHistory();
       const oldRole = lane.role;
       lane.name = name.trim();
-      let newRole = lane.name.trim().toUpperCase().normalize('NFD')
-                        .replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]+/g, '_');
+      let newRole = lane.name
+        .trim()
+        .toUpperCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^A-Z0-9]+/g, '_');
       lane.role = newRole || 'ROLE_' + Date.now();
 
       if (this.workflow) {
-        this.workflow.nodes.forEach(n => {
+        this.workflow.nodes.forEach((n) => {
           if (n.assignedRole === oldRole) n.assignedRole = lane.role;
         });
       }
@@ -1003,9 +1126,15 @@ export class DesignerComponent implements OnInit, OnDestroy {
   deleteSelectedNode() {
     if (!this.workflow || !this.selectedNode) return;
     this.pushHistory();
-    const id = this.selectedNode.id;
-    this.workflow.nodes = this.workflow.nodes.filter((n) => n.id !== id);
-    this.workflow.edges = this.workflow.edges.filter((e) => e.sourceId !== id && e.targetId !== id);
+    const nodeToDelete = { ...this.selectedNode };
+
+    this.workflow.nodes = this.workflow.nodes.filter((n) => n.id !== nodeToDelete.id);
+    this.workflow.edges = this.workflow.edges.filter(
+      (e) => e.sourceId !== nodeToDelete.id && e.targetId !== nodeToDelete.id,
+    );
+
+    // ¡BROADCAST AGREGADO!
+    this.broadcast('NODE_DELETE', nodeToDelete);
     this.selectedNode = null;
   }
 
@@ -1017,15 +1146,31 @@ export class DesignerComponent implements OnInit, OnDestroy {
   deleteSelectedEdge() {
     if (!this.workflow || !this.selectedEdge) return;
     this.pushHistory();
-    this.workflow.edges = this.workflow.edges.filter((e) => e.id !== this.selectedEdge!.id);
+    const edgeToDelete = { ...this.selectedEdge };
+
+    this.workflow.edges = this.workflow.edges.filter((e) => e.id !== edgeToDelete.id);
+
+    // ¡BROADCAST AGREGADO!
+    this.broadcast('EDGE_DELETE', edgeToDelete);
     this.selectedEdge = null;
   }
-
+  /*
   onNodeUpdated(node: WorkflowNode) {
     if (!this.workflow) return;
     const idx = this.workflow.nodes.findIndex((n) => n.id === node.id);
     if (idx >= 0) this.workflow.nodes[idx] = { ...node };
     this.broadcast('NODE_ADD', node);
+  }*/
+
+  onNodeUpdated(node: WorkflowNode) {
+    if (!this.workflow) return;
+    const idx = this.workflow.nodes.findIndex((n) => n.id === node.id);
+    if (idx >= 0) {
+      this.workflow.nodes[idx] = { ...node };
+    }
+
+    // 🚀 CAMBIO AQUÍ: Usar METADATA_UPDATE en lugar de NODE_ADD
+    this.broadcast('METADATA_UPDATE', node);
   }
 
   onEdgeUpdated(edge: WorkflowEdge) {
@@ -1050,7 +1195,7 @@ export class DesignerComponent implements OnInit, OnDestroy {
       error: () => {
         this.aiBar?.setThinking(false);
         this.elevenLabs.speak('Lo siento, hubo un problema.');
-      }
+      },
     });
   }
 
@@ -1068,9 +1213,11 @@ export class DesignerComponent implements OnInit, OnDestroy {
       if (visited.has(id)) continue;
       visited.add(id);
       nodeDepths.set(id, depth);
-      this.workflow.edges.filter(e => e.sourceId === id).forEach(e => {
-        queue.push({ id: e.targetId, depth: depth + 1 });
-      });
+      this.workflow.edges
+        .filter((e) => e.sourceId === id)
+        .forEach((e) => {
+          queue.push({ id: e.targetId, depth: depth + 1 });
+        });
     }
 
     const depthCounts = new Map<number, number>();
@@ -1085,8 +1232,8 @@ export class DesignerComponent implements OnInit, OnDestroy {
 
   // ── Conectores & Coordenadas ───────────────────────────────────────────────
   getPath(edge: WorkflowEdge): string {
-    const sNode = this.workflow?.nodes.find(n => n.id === edge.sourceId);
-    const tNode = this.workflow?.nodes.find(n => n.id === edge.targetId);
+    const sNode = this.workflow?.nodes.find((n) => n.id === edge.sourceId);
+    const tNode = this.workflow?.nodes.find((n) => n.id === edge.targetId);
     if (!sNode || !tNode) return '';
 
     let sx = sNode.x || 0;
@@ -1095,25 +1242,25 @@ export class DesignerComponent implements OnInit, OnDestroy {
     let ty = tNode.y || 0;
 
     // --- Lógica de separación automática para evitar superposición ---
-    const incoming = this.workflow?.edges.filter(e => e.targetId === tNode.id) || [];
-    const outgoing = this.workflow?.edges.filter(e => e.sourceId === sNode.id) || [];
-    const inIdx = incoming.findIndex(e => e.id === edge.id);
-    const outIdx = outgoing.findIndex(e => e.id === edge.id);
-    
+    const incoming = this.workflow?.edges.filter((e) => e.targetId === tNode.id) || [];
+    const outgoing = this.workflow?.edges.filter((e) => e.sourceId === sNode.id) || [];
+    const inIdx = incoming.findIndex((e) => e.id === edge.id);
+    const outIdx = outgoing.findIndex((e) => e.id === edge.id);
+
     // Si hay varias flechas, las desplazamos 20px entre sí
     const autoInX = incoming.length > 1 ? (inIdx - (incoming.length - 1) / 2) * 20 : 0;
     const autoOutX = outgoing.length > 1 ? (outIdx - (outgoing.length - 1) / 2) * 20 : 0;
 
     // --- Lógica de Puntos de Contacto para Barras Horizontales ---
     if (tNode.type === 'GATEWAY_AND') {
-      ty = (sy < ty) ? ty - 4 : ty + 4; // Entrar por arriba o abajo
-      tx += autoInX; 
+      ty = sy < ty ? ty - 4 : ty + 4; // Entrar por arriba o abajo
+      tx += autoInX;
     } else {
       tx += autoInX;
     }
 
     if (sNode.type === 'GATEWAY_AND') {
-      sy = (ty > sy) ? sy + 4 : sy - 4; // Salir por arriba o abajo
+      sy = ty > sy ? sy + 4 : sy - 4; // Salir por arriba o abajo
       sx += autoOutX;
     } else {
       sx += autoOutX;
@@ -1121,8 +1268,8 @@ export class DesignerComponent implements OnInit, OnDestroy {
 
     const getR = (type: string) => {
       if (['START', 'END', 'TIMER', 'GATEWAY_XOR'].includes(type)) return { x: 16, y: 16 };
-      if (type === 'GATEWAY_AND') return { x: 40, y: 0 }; 
-      return { x: 55, y: 25 }; 
+      if (type === 'GATEWAY_AND') return { x: 40, y: 0 };
+      return { x: 55, y: 25 };
     };
 
     const sR = getR(sNode.type);
@@ -1158,19 +1305,69 @@ export class DesignerComponent implements OnInit, OnDestroy {
     return baseMidY + (edge.offsetY || 0);
   }
 
-
-
-
   coords(id: string) {
     const n = this.workflow?.nodes.find((n) => n.id === id);
     return { x: n?.x || 0, y: n?.y || 0 };
   }
 
   // ── WebSocket ──────────────────────────────────────────────────────────────
-  private broadcast(type: 'NODE_ADD' | 'NODE_DELETE' | 'EDGE_ADD' | 'EDGE_DELETE', payload: any) {
+  private broadcast(
+    type: 'NODE_ADD' | 'NODE_MOVE' | 'NODE_DELETE' | 'EDGE_ADD' | 'EDGE_DELETE' | 'METADATA_UPDATE',
+    payload: any,
+  ) {
     this.socket.sendUpdate(this.workflowId, { userId: this.mySessionId, type, payload });
   }
+  /*
+  private handleRemote(u: WorkflowUpdate) {
+    if (!this.workflow || u.userId === this.mySessionId) return;
 
+    switch (u.type) {
+      case 'NODE_MOVE':
+        const n = this.workflow.nodes.find((node) => node.id === u.payload.nodeId);
+        if (n && n !== this.draggingNode) {
+          n.x = u.payload.x;
+          n.y = u.payload.y;
+          n.assignedRole = u.payload.assignedRole; // Sincroniza también el carril/rol
+        }
+        break;
+
+      case 'NODE_ADD':
+        // Evitar duplicados por si acaso
+        if (!this.workflow.nodes.some((node) => node.id === u.payload.id)) {
+          this.workflow.nodes.push(u.payload);
+        }
+        break;
+
+      case 'NODE_DELETE':
+        this.workflow.nodes = this.workflow.nodes.filter((node) => node.id !== u.payload.id);
+        this.workflow.edges = this.workflow.edges.filter(
+          (e) => e.sourceId !== u.payload.id && e.targetId !== u.payload.id,
+        );
+        if (this.selectedNode?.id === u.payload.id) this.selectedNode = null;
+        break;
+
+      case 'EDGE_ADD':
+        if (!this.workflow.edges.some((edge) => edge.id === u.payload.id)) {
+          this.workflow.edges.push(u.payload);
+        }
+        break;
+
+      case 'EDGE_DELETE':
+        this.workflow.edges = this.workflow.edges.filter((e) => e.id !== u.payload.id);
+        if (this.selectedEdge?.id === u.payload.id) this.selectedEdge = null;
+        break;
+
+      case 'METADATA_UPDATE':
+        // Si actualizan etiquetas o propiedades desde el panel
+        const updatedNode = this.workflow.nodes.find((node) => node.id === u.payload.id);
+        if (updatedNode) {
+          updatedNode.label = u.payload.label;
+          updatedNode.assignedRole = u.payload.assignedRole;
+        }
+        break;
+    }
+  }*/
+  /*
   private handleRemote(u: WorkflowUpdate) {
     if (!this.workflow || u.userId === this.mySessionId) return;
 
@@ -1179,15 +1376,87 @@ export class DesignerComponent implements OnInit, OnDestroy {
       if (n && n !== this.draggingNode) {
         n.x = u.payload.x;
         n.y = u.payload.y;
+
+        // 🚀 ¡LA SOLUCIÓN! Fuerza a Angular a redibujar el SVG en la pantalla de inmediato
+        this.cdr.detectChanges();
       }
     }
+  }
+*/
+
+  private handleRemote(u: WorkflowUpdate) {
+    if (!this.workflow || u.userId === this.mySessionId) return;
+
+    console.log('[Socket] Mensaje remoto recibido en el diseñador: - designer.component.ts:1390', u.type, u.payload);
+
+    switch (u.type) {
+      case 'NODE_MOVE':
+        const n = this.workflow.nodes.find((node) => node.id === u.payload.nodeId);
+        if (n && n !== this.draggingNode) {
+          n.x = u.payload.x;
+          n.y = u.payload.y;
+          if (u.payload.assignedRole) {
+            n.assignedRole = u.payload.assignedRole; // Sincroniza el carril si cambió de rol
+          }
+        }
+        break;
+
+      case 'NODE_ADD':
+        // 🚀 Verificar que el nodo no exista ya en la lista local antes de agregarlo
+        const existeNodo = this.workflow.nodes.some((node) => node.id === u.payload.id);
+        if (!existeNodo) {
+          this.workflow.nodes.push(u.payload);
+        }
+        break;
+
+      case 'NODE_DELETE':
+        // 🚀 Eliminar el nodo de la lista local si otro usuario lo borró
+        this.workflow.nodes = this.workflow.nodes.filter((node) => node.id !== u.payload.id);
+        this.workflow.edges = this.workflow.edges.filter(
+          (e) => e.sourceId !== u.payload.id && e.targetId !== u.payload.id,
+        );
+        if (this.selectedNode?.id === u.payload.id) this.selectedNode = null;
+        break;
+
+      case 'EDGE_ADD':
+        // 🚀 Conectar flechas en tiempo real
+        const existeArista = this.workflow.edges.some((edge) => edge.id === u.payload.id);
+        if (!existeArista) {
+          this.workflow.edges.push(u.payload);
+        }
+        break;
+
+      case 'EDGE_DELETE':
+        // 🚀 Borrar flechas en tiempo real
+        this.workflow.edges = this.workflow.edges.filter((e) => e.id !== u.payload.id);
+        if (this.selectedEdge?.id === u.payload.id) this.selectedEdge = null;
+        break;
+
+      case 'METADATA_UPDATE':
+        const nodoAEditar = this.workflow.nodes.find((node) => node.id === u.payload.id);
+        if (nodoAEditar) {
+          nodoAEditar.label = u.payload.label; // Sincroniza el texto (ej. "Aprobar Solicitud")
+          nodoAEditar.assignedRole = u.payload.assignedRole; // Sincroniza el rol del carril
+        }
+        break;
+    }
+
+    // 🔥 Obliga a Angular a redibujar el lienzo SVG con la nueva lista de elementos modificada
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 
   private defaultLabel(type: string): string {
     const m: Record<string, string> = {
-      START: 'Inicio', END: 'Fin', TASK: 'Tarea', SERVICE: 'Servicio',
-      GATEWAY_XOR: 'Decisión', GATEWAY_AND: 'Paralelo', AGENT: 'Agente IA',
-      TIMER: 'Temporizador', MAIL: 'Correo',
+      START: 'Inicio',
+      END: 'Fin',
+      TASK: 'Tarea',
+      SERVICE: 'Servicio',
+      GATEWAY_XOR: 'Decisión',
+      GATEWAY_AND: 'Paralelo',
+      AGENT: 'Agente IA',
+      TIMER: 'Temporizador',
+      MAIL: 'Correo',
     };
     return m[type] || 'Nodo';
   }

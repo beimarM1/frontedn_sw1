@@ -13,6 +13,7 @@ export interface FormField {
   options?: string[];     // Para tipo 'select'
   gridColumns?: { id: string, label: string, type: 'text'|'number'|'date' }[]; // Para tipo 'grid'
   defaultValue?: any;
+  permission?: 'NONE' | 'READ' | 'UPLOAD' | 'WRITE'; // Nivel de acceso: oculto, solo leer, solo subir, o editar colaborativo
 }
 
 export interface FormSchema {
@@ -107,5 +108,9 @@ export class WorkflowService {
 
   completarTarea(tramiteId: string, data: any): Observable<any> {
     return this.http.post(`${this.coreUrl}/tramites/completar-tarea`, { tramiteId, data });
+  }
+
+  actualizarFormData(tramiteId: string, data: any): Observable<any> {
+    return this.http.post(`${this.coreUrl}/tramites/${tramiteId}/form-data`, data);
   }
 }

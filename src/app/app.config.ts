@@ -4,7 +4,8 @@ import {
   importProvidersFrom,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authInterceptor } from './services/auth.interceptor';
 import {
   LucideAngularModule,
   LayoutTemplate,
@@ -51,6 +52,15 @@ import {
   Timer, // AGREGADO: Para el error "timer"
   CheckCircle2,
   BarChart3,
+  Folder,
+  Lock,
+  History,
+  UploadCloud,
+  FileText,
+  Table,
+  File,
+  Download,
+  Users
 } from 'lucide-angular';
 import { routes } from './app.routes';
 
@@ -58,7 +68,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
     importProvidersFrom(
       LucideAngularModule.pick({
         LayoutTemplate,
@@ -105,6 +115,15 @@ export const appConfig: ApplicationConfig = {
         Timer, // AGREGADO
         CheckCircle2,
         BarChart3,
+        Folder,
+        Lock,
+        History,
+        UploadCloud,
+        FileText,
+        Table,
+        File,
+        Download,
+        Users
       }),
     ),
   ],
