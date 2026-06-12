@@ -7,6 +7,7 @@ import { StorageService } from '../services/storage.service';
 import { AuthService } from '../services/auth.service';
 import { WorkflowService } from '../services/workflow.service';
 import { CollaborativeEditorComponent } from './collaborative-editor.component';
+import { AuditService, AuditRecord } from '../services/audit.service';
 
 export interface DocDocument {
   id: string;
@@ -19,13 +20,7 @@ export interface DocDocument {
   fieldId?: string; // Mapea al campo correspondiente en MongoDB
 }
 
-export interface AuditRecord {
-  id: string;
-  docId: string;
-  user: string;
-  action: 'READ' | 'CHECK-OUT' | 'CHECK-IN' | 'UPLOAD';
-  timestamp: Date;
-}
+// Interfaz local eliminada para usar la del AuditService
 
 @Component({
   selector: 'app-document-manager',
@@ -176,14 +171,14 @@ export interface AuditRecord {
               <h2 class="font-bold text-lg flex items-center gap-2">
                 {{ selectedDoc()?.name }}
                 @if (selectedDoc()?.lockedBy?.length) {
-                  <span
-                    class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center gap-1 border border-amber-200 dark:border-amber-500/30"
+        @if (false) {        <span
+                   class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center gap-1 border border-amber-200 dark:border-amber-500/30"
                   >
-                    <i-lucide name="users" [size]="10"></i-lucide>
-                    En edición por: {{ selectedDoc()?.lockedBy?.join(', ') }} ({{
-                      selectedDoc()?.lockedBy?.length
-                    }}/3)
-                  </span>
+                  <i-lucide name="users" [size]="10"></i-lucide>
+                  En edición por: {{ selectedDoc()?.lockedBy?.join(', ') }} ({{
+                    selectedDoc()?.lockedBy?.length
+                   }}/3)
+                 </span> }
                 }
               </h2>
             </div>
@@ -398,9 +393,10 @@ export interface AuditRecord {
   ],
 })
 export class DocumentManagerComponent implements OnInit {
-  private storageService = inject(StorageService);
-  private authService = inject(AuthService);
+  private storageService  = inject(StorageService);
+  private authService     = inject(AuthService);
   private workflowService = inject(WorkflowService);
+  private auditSvc        = inject(AuditService); // Servicio compartido con DesignerComponent
 
   // Mapeo amigable de fieldId -> label
   @Input() nodeFieldLabels: { [key: string]: string } = {};
@@ -430,7 +426,7 @@ export class DocumentManagerComponent implements OnInit {
   get nodeFieldPermissions() { return this._nodeFieldPermissions; }
   @Input() set nodeFieldPermissions(value: { [key: string]: 'UPLOAD' | 'WRITE' | 'READ' | 'NONE' }) {
     this._nodeFieldPermissions = value || {};
-    console.log('[DocManager] ✅ nodeFieldPermissions RECIBIDO por setter:', this._nodeFieldPermissions);
+    console.log('[DocManager] ✅ nodeFieldPermissions RECIBIDO por setter: - document-manager.component.ts:433', this._nodeFieldPermissions);
     this._tryLoadDocuments();
   }
 
@@ -465,52 +461,29 @@ export class DocumentManagerComponent implements OnInit {
   // Estados reactivos con Signals
   documents = signal<DocDocument[]>([]);
 
-  audits = signal<AuditRecord[]>([
-    {
-      id: 'a1',
-      docId: 'doc-1',
-      user: 'Juan Pérez',
-      action: 'UPLOAD',
-      timestamp: new Date(Date.now() - 86400000 * 2),
-    },
-    {
-      id: 'a2',
-      docId: 'doc-1',
-      user: 'Ana Gómez',
-      action: 'READ',
-      timestamp: new Date(Date.now() - 3600000 * 5),
-    },
-    {
-      id: 'a3',
-      docId: 'doc-2',
-      user: 'Carlos Ruiz',
-      action: 'UPLOAD',
-      timestamp: new Date(Date.now() - 86400000),
-    },
-    {
-      id: 'a4',
-      docId: 'doc-2',
-      user: 'Juan Pérez',
-      action: 'CHECK-OUT',
-      timestamp: new Date(Date.now() - 1800000),
-    },
-  ]);
+  // La Signal de auditoría vive en AuditService (singleton compartido con DesignerComponent).
+  // Esto permite que los mensajes WebSocket recibidos en DesignerComponent actualicen
+  // automáticamente este template sin ningún mecanismo adicional.
+  get audits() { return this.auditSvc.audits; }
 
-  selectedDoc = signal<DocDocument | null>(null);
-  currentPdfUrl = signal<string | null>(null);
-  loadingUrl = signal<boolean>(false);
-  uploading = signal<boolean>(false);
-  currentFileBlob = signal<File | undefined>(undefined);
-  currentUser = '';
-  currentUserRole = '';
-
+  // filteredAudits: filtra los registros para mostrar solo los del documento actual
   filteredAudits = computed(() => {
     const doc = this.selectedDoc();
     if (!doc) return [];
     return this.audits()
-      .filter((a) => a.docId === doc.id)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      .filter((a) => a.documentId === doc.id)
+      // La ordenación global ya se hace en el servicio, pero si necesitamos
+      // podemos mantenerla por seguridad.
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   });
+
+  selectedDoc     = signal<DocDocument | null>(null);
+  currentPdfUrl   = signal<string | null>(null);
+  loadingUrl      = signal<boolean>(false);
+  uploading       = signal<boolean>(false);
+  currentFileBlob = signal<File | undefined>(undefined);
+  currentUser     = '';
+  currentUserRole = '';
 
   ngOnInit() {
     const session = this.authService.getSession()();
@@ -560,15 +533,15 @@ export class DocumentManagerComponent implements OnInit {
             const permissionLevel: DocDocument['permission'] = 
               (permissionFromSchema as DocDocument['permission']) || 'NONE';
 
-            console.log(`[DocManager] Evaluando archivo: ${item.value}`);
-            console.log(`  ├─ fieldId:           "${fieldId}"`);
-            console.log(`  ├─ permissions map:   `, this._nodeFieldPermissions);
-            console.log(`  ├─ permiso hallado:   ${permissionFromSchema}`);
-            console.log(`  └─ permissionLevel:   ${permissionLevel}`);
+            console.log(`[DocManager] Evaluando archivo: ${item.value} - document-manager.component.ts:563`);
+            console.log(`├─ fieldId:           "${fieldId}" - document-manager.component.ts:564`);
+            console.log(`├─ permissions map: - document-manager.component.ts:565`, this._nodeFieldPermissions);
+            console.log(`├─ permiso hallado:   ${permissionFromSchema} - document-manager.component.ts:566`);
+            console.log(`└─ permissionLevel:   ${permissionLevel} - document-manager.component.ts:567`);
 
             // Ocultación total: si es NONE, el usuario no ve que el archivo existe.
             if (permissionLevel === 'NONE') {
-              console.log(`  ⛔ Archivo OCULTADO por política NONE.`);
+              console.log(`⛔ Archivo OCULTADO por política NONE. - document-manager.component.ts:571`);
               continue;
             }
 
@@ -662,7 +635,7 @@ export class DocumentManagerComponent implements OnInit {
             this.loadingUrl.set(false);
           })
           .catch((err) => {
-            console.error('Error al transformar binario de S3:', err);
+            console.error('Error al transformar binario de S3: - document-manager.component.ts:665', err);
             this.loadingUrl.set(false);
           });
       },
@@ -717,7 +690,7 @@ export class DocumentManagerComponent implements OnInit {
                     this.tramite = updatedTramite;
                     this.onFileUploaded.emit({ fieldId, fileName: cleanName });
                   },
-                  error: (err) => console.error('Error al actualizar nombre de archivo en tramite:', err)
+                  error: (err) => console.error('Error al actualizar nombre de archivo en tramite: - document-manager.component.ts:720', err)
                 });
               } else {
                 this.selectDocument(this.selectedDoc()!);
@@ -734,7 +707,7 @@ export class DocumentManagerComponent implements OnInit {
                   alert('¡Archivo guardado y asociado exitosamente al trámite!');
                 },
                 error: (err) => {
-                  console.error('Error al asociar archivo al tramite:', err);
+                  console.error('Error al asociar archivo al tramite: - document-manager.component.ts:737', err);
                   alert('Archivo subido a S3, pero no se pudo asociar al trámite.');
                 }
               });
@@ -742,7 +715,7 @@ export class DocumentManagerComponent implements OnInit {
             this.uploading.set(false);
           },
           error: (err) => {
-            console.error('Error al subir a S3:', err);
+            console.error('Error al subir a S3: - document-manager.component.ts:745', err);
             this.uploading.set(false);
             alert('Error subiendo el archivo. Verifica tus credenciales IAM y políticas de CORS.');
           },
@@ -794,14 +767,13 @@ export class DocumentManagerComponent implements OnInit {
   }
 
   private addAuditRecord(docId: string, action: AuditRecord['action']) {
-    const newRecord: AuditRecord = {
-      id: 'a' + Date.now(),
-      docId,
-      user: this.currentUser,
-      action,
-      timestamp: new Date(),
-    };
-    this.audits.update((arr) => [...arr, newRecord]);
+    this.auditSvc.addRecord({
+      id         : 'local-' + Date.now(),
+      documentId : docId,
+      user       : this.currentUser,
+      action     : action,
+      timestamp  : new Date().toISOString(),
+    });
   }
 
   getIconForType(type: string): string {

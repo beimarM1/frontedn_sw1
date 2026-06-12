@@ -31,6 +31,7 @@ import { BpmnPaletteComponent } from './bpmn-palette/bpmn-palette.component';
 import { PropertiesPanelComponent } from './properties-panel/properties-panel.component';
 import { AiBarComponent } from './ai-bar/ai-bar.component';
 import { AuthService } from '../services/auth.service';
+import { AuditService, AuditRecord } from '../services/audit.service';
 
 @Component({
   selector: 'app-designer',
@@ -391,7 +392,7 @@ import { AuthService } from '../services/auth.service';
                     stroke-width="3"
                     class="pointer-events-none"
                   />
-  
+
                   <!-- Botón eliminar rojo -->
                   <g
                     transform="translate(22, 0)"
@@ -734,7 +735,7 @@ export class DesignerComponent implements OnInit, OnDestroy {
   selectedNode: WorkflowNode | null = null;
   selectedEdge: WorkflowEdge | null = null;
   connectedUsers: { id: string; name: string; color: string }[] = [];
-
+  historialAuditoria: any[] = [];
   readonly mySessionId = 'u_' + Math.random().toString(36).substring(2, 8);
 
   activeUsers: { id: string; name: string; color: string }[] = [
@@ -760,44 +761,78 @@ export class DesignerComponent implements OnInit, OnDestroy {
   private initialEdgeOffset = { x: 0, y: 0 };
   private socketSub: Subscription | null = null;
 
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private wfService = inject(WorkflowService);
-  private socket = inject(WorkflowSocketService);
+  private route       = inject(ActivatedRoute);
+  private router      = inject(Router);
+  private wfService   = inject(WorkflowService);
+  private socket      = inject(WorkflowSocketService);
   private authService = inject(AuthService);
-  readonly history = inject(HistoryService);
-  private elevenLabs = inject(ElevenLabsService);
-  private cdr = inject(ChangeDetectorRef); // 🚀 ¡AGREGA ESTA LÍNEA!
+  readonly history    = inject(HistoryService);
+  private elevenLabs  = inject(ElevenLabsService);
+  private cdr         = inject(ChangeDetectorRef);
+  readonly auditSvc   = inject(AuditService); // Servicio singleton para el Audit Trail
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit() {
     this.route.params.subscribe((p) => {
       this.workflowId = p['id'];
       this.loadWorkflow();
 
-      // Conectar socket
-      this.socket.connect(this.workflowId);
+      // 🚀 SOLUCIÓN: Recuperar el nombre real desde el AuthService
+      const sesionActiva = this.authService.getSession()(); // Ejecuta la señal del estado de sesión
+      const nombreParaIdentificar = sesionActiva?.name || 'Beimar - Web'; // 🚀 Usamos solo .name que sí existe
+
+      // Conectar el socket con el segundo parámetro obligatorio sanado
+      this.socket.connect(this.workflowId, nombreParaIdentificar);
 
       // 1. Suscribirse a actualizaciones
       this.socketSub = this.socket.getUpdates().subscribe((u) => this.handleRemote(u));
 
-      // 2. Suscribirse a presencia
+      // 2. Suscribirse a presencia global de colaboradores remotos
       this.socketSub.add(
         this.socket.getPresence().subscribe((presence: any) => {
-          // Reconstruir lista: yo + colaboradores remotos
-          const remoteCount = (presence.count || 1) - 1;
+          if (!presence || !presence.sessions) return;
+
+          const listaSesionesDelServidor: string[] = presence.sessions;
+          const colaboradoresRemotos = listaSesionesDelServidor.filter(
+            (id) => id !== this.mySessionId,
+          );
+          ///            (id) => id !== this.mySessionId,
+          ///  );
+          // Conteo total de personas conectadas según el servidor
+          //  const totalConectados = presence.count || 1;
+
+          // Calculamos los colaboradores remotos restando nuestra propia sesión (-1)
+          //    const remoteCount = Math.max(0, totalConectados - 1);
+
+          //   console.log(
+          //   '[Presence] Usuarios totales en el servidor:',
+          // totalConectados,
+          //       'Remotos:',
+          //     remoteCount,
+          // );
+
+          // Reconstruimos el array de usuarios para los avatares de la barra superior
           this.activeUsers = [
             { id: this.mySessionId, name: 'Tú', color: '#10b981' },
-            ...Array.from({ length: Math.max(0, remoteCount) }, (_, i) => ({
-              id: `remote_${i}`,
+            ///  ...Array.from({ length: remoteCount }, (_, i) => ({
+            ...colaboradoresRemotos.map((idSession, i) => ({
+              id: idSession,
+              ////  id: `remote_${i}_${Date.now()}`, // ID único para evitar colisiones en el track de Angular
               name: `Colaborador ${i + 1}`,
               color: this.userColors[i % this.userColors.length],
             })),
           ];
+          console.log(
+            '[Presence] Sincronizado con éxito. Total en línea:',
+            this.activeUsers.length,
+          );
+          // 🔥 OBLIGATORIO: Fuerza a Angular a redibujar los círculos de los avatares en la UI de inmediato
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         }),
       );
 
-      /// 3. Throttle para movimientos de nodos
-       this.socketSub.add(
+      // 3. Throttle para movimientos de nodos (Evita saturar el Broker de mensajería)
+      this.socketSub.add(
         this.nodeMoveRaw$.pipe(throttleTime(50)).subscribe((payload) => {
           const user = this.authService.getSession()();
           const name = user ? user.name : this.mySessionId;
@@ -805,36 +840,30 @@ export class DesignerComponent implements OnInit, OnDestroy {
         }),
       );
 
+      // 4. CANAL DE AUDITORÍA EN TIEMPO REAL
+      // FIX: usa AuditService (servicio singleton) en lugar del lookup dinámico
+      // que siempre fallaba porque la Signal 'audits' vive en DocumentManagerComponent,
+      // no en este componente.
       this.socketSub.add(
-        this.socket.getPresence().subscribe((presence: any) => {
-          if (!presence) return;
+        this.socket.getAuditTrailUpdates().subscribe({
+          next: (nuevaTraza) => {
+            console.log('📜 Traza WebSocket recibida - designer.component.ts:850', nuevaTraza);
 
-          // Conteo total de personas conectadas según el servidor
-          const totalConectados = presence.count || 1;
+            const record: AuditRecord = {
+              id        : 'ws-' + (nuevaTraza.documentId ?? 'doc') + '-' + Date.now(),
+              documentId: nuevaTraza.documentId ?? '',
+              user      : nuevaTraza.username   ?? 'Funcionario',
+              // La acción ya viene mapeada por el backend (READ / CHECK-IN / CHECK-OUT / UPLOAD)
+              action    : nuevaTraza.action      ?? 'READ',
+              timestamp : nuevaTraza.timestamp   ?? new Date().toISOString(),
+            };
 
-          // Calculamos los colaboradores remotos restando nuestra propia sesión (-1)
-          const remoteCount = Math.max(0, totalConectados - 1);
-
-          console.log(
-            '[Presence] Usuarios totales en el servidor:',
-            totalConectados,
-            'Remotos:',
-            remoteCount,
-          );
-
-          // Reconstruimos el array de usuarios para los avatares de la barra superior
-          this.activeUsers = [
-            { id: this.mySessionId, name: 'Tú', color: '#10b981' },
-            ...Array.from({ length: remoteCount }, (_, i) => ({
-              id: `remote_${i}_${Date.now()}`, // ID único para evitar colisiones en el track de Angular
-              name: `Colaborador ${i + 1}`,
-              color: this.userColors[i % this.userColors.length],
-            })),
-          ];
-
-          // 🔥 OBLIGATORIO: Fuerza a Angular a redibujar los círculos de los avatares en la UI de inmediato
-          this.cdr.detectChanges();
-        }),
+            // Actualiza la Signal compartida → el template de DocumentManagerComponent
+            // se repinta automáticamente por reactividad de Signals (sin detectChanges)
+            this.auditSvc.addRecord(record);
+          },
+          error: (err) => console.error('❌ Error en audit trail WebSocket - designer.component.ts:865', err),
+        })
       );
     });
 
@@ -1387,7 +1416,11 @@ export class DesignerComponent implements OnInit, OnDestroy {
   private handleRemote(u: WorkflowUpdate) {
     if (!this.workflow || u.userId === this.mySessionId) return;
 
-    console.log('[Socket] Mensaje remoto recibido en el diseñador: - designer.component.ts:1390', u.type, u.payload);
+    console.log(
+      '[Socket] Mensaje remoto recibido en el diseñador:',
+      u.type,
+      u.payload,
+    );
 
     switch (u.type) {
       case 'NODE_MOVE':

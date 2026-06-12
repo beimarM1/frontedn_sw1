@@ -1,5 +1,6 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
-import { Subject, Observable, throttleTime, BehaviorSubject } from 'rxjs';import { Client } from '@stomp/stompjs';
+import { Subject, Observable, BehaviorSubject } from 'rxjs';
+import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { environment } from '../../environments/environment';
 
@@ -30,35 +31,50 @@ export class WorkflowSocketService implements OnDestroy {
 
   // --- Subjects internos ---
   private updatesSubject = new Subject<WorkflowUpdate>();
-private presenceSubject = new BehaviorSubject<PresenceUpdate>({ count: 1, sessions: [] });
+  private presenceSubject = new BehaviorSubject<PresenceUpdate>({ count: 1, sessions: [] });
+  
+  // 🚀 NUEVO: Canal reactivo exclusivo para distribuir la auditoría en tiempo real
+  private auditSubject = new Subject<any>(); 
+
   constructor(private zone: NgZone) {}
 
   // ── Conexión ──────────────────────────────────────────────────────────────
 
-  connect(workflowId: string): void {
+  connect(workflowId: string, username: string): void {
     // Si ya hay una conexión activa, la reutilizamos
     if (this.stompClient?.connected) return;
 
     this.stompClient = new Client({
       webSocketFactory: () => new SockJS(environment.wsWorkflowUrl),
-      // En producción, eliminar o reducir el debug:
+      connectHeaders: {
+        username: username,
+      },
       debug: () => {},
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
     });
 
-    this.stompClient.onConnect = () => {
-      console.log('[Socket] Conectado al workflow - workflow-socket.service.ts:52', workflowId);
+    this.stompClient.onConnect = (frame) => {
+      console.log('[Socket] Conectado al workflow - workflow-socket.service.ts:59', workflowId);
 
-      // Canal de actualizaciones del diagrama
+      // 1. Canal de actualizaciones del diagrama
       this.stompClient!.subscribe(`/topic/workflow/${workflowId}`, (msg) => {
         this.zone.run(() => this.updatesSubject.next(JSON.parse(msg.body)));
       });
 
-      // Canal de presencia global
+      // 2. Canal de presencia global
       this.stompClient!.subscribe('/topic/presence', (msg) => {
         this.zone.run(() => this.presenceSubject.next(JSON.parse(msg.body)));
+      });
+
+      // 3. 🚀 CORREGIDO: Canal de auditoría del historial (Solo se activa tras estar conectados)
+      this.stompClient!.subscribe('/topic/audit-trail', (msg) => {
+        const nuevaTraza = JSON.parse(msg.body);
+        console.log('📜 Nuevo historial recibido en tiempo real: - workflow-socket.service.ts:74', nuevaTraza);
+        
+        // Despachamos el mensaje de forma segura a través de la zona de Angular
+        this.zone.run(() => this.auditSubject.next(nuevaTraza));
       });
     };
 
@@ -105,6 +121,11 @@ private presenceSubject = new BehaviorSubject<PresenceUpdate>({ count: 1, sessio
   /** Conteo de usuarios conectados desde el backend */
   getPresence(): Observable<PresenceUpdate> {
     return this.presenceSubject.asObservable();
+  }
+
+  /** 🚀 NUEVO: Permite a los componentes suscribirse al historial en tiempo real */
+  getAuditTrailUpdates(): Observable<any> {
+    return this.auditSubject.asObservable();
   }
 
   // ── Desconexión ───────────────────────────────────────────────────────────
